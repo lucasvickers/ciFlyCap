@@ -157,7 +157,7 @@ bool ciFlyCap::Obj::save(const string & filename)
 }
 
 // Start capturing
-bool ciFlyCap::Obj::start()
+bool ciFlyCap::Obj::start(bool callback)
 {
 
 	// Free resources first if already capturing
@@ -176,8 +176,17 @@ bool ciFlyCap::Obj::start()
 	mSurface.reset();
 	mSurface = Surface8u(mRawImage.GetCols(), mRawImage.GetRows(), false, mSurfaceChannelOrder);
 
+	mCallback = callback;
+
+	FlyCapture2::ImageEventCallback;
+
+
 	// Start capture
-	mErr = mCamera->StartCapture();
+	if(mCallback) {
+		mErr = mCamera->StartCapture(ciFlyCap::Obj::onImageGrabbed, this);
+	} else {
+		mErr = mCamera->StartCapture();
+	}
     if (mErr != PGRERROR_OK)
 	{
 		showError();
@@ -198,7 +207,9 @@ bool ciFlyCap::Obj::start()
 	// Run update in separate thread
 	mCapturing = true;
 	mNewFrame = false;
-	thread(&ciFlyCap::Obj::update, this);
+	if( ! mCallback) {
+		thread(&ciFlyCap::Obj::update, this);
+	}
 
 	// Return true if no error
 	return true;
@@ -547,7 +558,7 @@ bool ciFlyCap::Obj::setDeviceId(int32_t deviceId)
 	if (mCapturing || mCamera == 0 || mCamera->IsConnected())
 	{
 		stop();
-		return start();
+		return start(mCallback);
 	}
 
 	// Connect at new device ID
@@ -889,6 +900,31 @@ void ciFlyCap::Obj::showError()
 {
 	console() << "ERROR ciFlyCap: " << mErr.GetDescription() << "\n";
 }
+
+// Callback
+void ciFlyCap::Obj::onImageGrabbed(Image *pImage, const void *pCallbackData)
+{
+	ciFlyCap::Obj* obj = (ciFlyCap::Obj*) pCallbackData;
+	obj->updateImage(pImage);
+}
+
+// update image from callback
+void ciFlyCap::Obj::updateImage(Image *pImage)
+{
+	// Turn off flag
+	mNewFrame = false;
+
+	mErr = pImage->Convert( mConvertedImage.GetPixelFormat(), &mConvertedImage );
+	if (mErr != PGRERROR_OK) { showError(); return; }
+
+	mMutex.lock();
+	memcpy(mSurface.getData(), mConvertedImage.GetData(), mConvertedImage.GetCols() * mConvertedImage.GetRows() * mChannelCount);
+	mMutex.unlock();
+
+	// Turn on new frame flag
+	mNewFrame = true;
+}
+
 
 // Runs update logic
 void ciFlyCap::Obj::update()

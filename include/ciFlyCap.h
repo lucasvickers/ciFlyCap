@@ -76,7 +76,7 @@ private:
 		bool isConnected();
 		bool isInitialized();
 		bool save(const string & filename);
-		bool start();
+		bool start(bool callback);
 		void stop();
 
 		// Getters
@@ -125,6 +125,8 @@ private:
 		SurfaceChannelOrder		mSurfaceChannelOrder;
 		Surface8u				mSurface;
 		void update();
+		static void onImageGrabbed(Image *pImage, const void *pCallbackData);
+		void updateImage(Image *pImage);
 
 		// FlyCapture objects
 		BusManager				mBusManager;
@@ -143,15 +145,18 @@ private:
 
 		boost::mutex			mMutex;
 
+		bool					mCallback;
+
 	};
 
 	// Pointer to object
-	std::shared_ptr<Obj> mObj;
+	std::shared_ptr<Obj>	mObj;
+	bool					mCallback;
 
 public: 
 
 	// Con/de-structor
-	ciFlyCap() {}
+	ciFlyCap() { mCallback = true; }
 	ciFlyCap(int32_t width, int32_t height, int32_t deviceId = 0) 
 	{ 
 		mObj = std::shared_ptr<Obj>(new Obj()); 
@@ -167,7 +172,7 @@ public:
 	bool isInitialized() { return mObj ? mObj->isInitialized() : false; }
 	bool isConnected() { return mObj ? mObj->isConnected() : false; }
 	bool save(string filename) { return mObj ? mObj->save(filename) : false; }
-	bool start() { return mObj ? mObj->start() : false; }
+	bool start(bool callback=true) { mCallback = callback; return mObj ? mObj->start(callback) : false; }
 	void stop() 
 	{ 
 		if (mObj) 
@@ -207,7 +212,7 @@ public:
 			{
 				mObj->stop();
 				mObj->setDeviceId(deviceId);
-				return mObj->start();
+				return mObj->start(mCallback);
 			}
 			return mObj->setDeviceId(deviceId);
 		}
@@ -228,7 +233,7 @@ public:
 			{
 				mObj->stop();
 				mObj->setSize(size);
-				return mObj->start();
+				return mObj->start(mCallback);
 			}
 			return mObj->setSize(size);
 		}
