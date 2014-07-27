@@ -25,4 +25,4 @@ NOTES:
 ISSUES:
 
 	Currently using two CiFlyCap objects crashes.  Unsure what the issue is, but I have an
-	example in samples/RawMultiTest that shows multiple cameras fundamentally work fine.
+	example in samples/RawMultiTest that shows multiple cameras fundamentally work fine (as in w/o the CiFlyCap wrapper)
