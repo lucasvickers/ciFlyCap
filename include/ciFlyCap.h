@@ -124,6 +124,7 @@ private:
 		bool					mNewFrame;
 		SurfaceChannelOrder		mSurfaceChannelOrder;
 		Surface8u				mSurface;
+
 		void update();
 		static void onImageGrabbed(Image *pImage, const void *pCallbackData);
 		void updateImage(Image *pImage);

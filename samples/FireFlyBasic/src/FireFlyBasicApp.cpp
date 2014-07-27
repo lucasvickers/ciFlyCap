@@ -23,7 +23,7 @@ class FireFlyBasicApp : public AppNative {
 void FireFlyBasicApp::setup()
 {
 	// startup
-	mCapture = ciFlyCap(640, 480);
+	mCapture = ciFlyCap(640, 480, 0);
 	if (mCapture.connect()) {
 		mCapture.setPixelFormat(PixelFormat::PIXEL_FORMAT_RGB8);
 		mCapture.start();
